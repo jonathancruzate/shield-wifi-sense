@@ -79,9 +79,21 @@ def save_state(st):
         json.dump(st, f)
 
 
+def note_state(**kw):
+    """Persist freshness markers on EVERY run (heartbeat feed (l)
+    reads them: dedupe means a quiet room legitimately appends no
+    rows, so row-absence can't distinguish 'flat' from 'dead' —
+    last_poll_utc / last_sample_ts / last_status can)."""
+    st = load_state()
+    st.update(kw)
+    st["last_poll_utc"] = datetime.now(timezone.utc).isoformat()
+    save_state(st)
+
+
 def main() -> int:
     try:
         if not ensure_lane():
+            note_state(last_status="adb-unavailable")
             print("shield-rssi: abstain — ADB lane to Shield unavailable")
             return 0
 
@@ -102,6 +114,7 @@ def main() -> int:
             except Exception:
                 continue
         if not sample:
+            note_state(last_status="no-parseable-sample")
             print("shield-rssi: abstain — no parseable sample in app log")
             return 0
 
@@ -112,6 +125,7 @@ def main() -> int:
         except Exception:
             age = None
         if age is None or age > FRESH_SECS:
+            note_state(last_status="sample-stale", last_sample_ts=ts)
             print(f"shield-rssi: abstain — newest sample stale "
                   f"(age {age if age is None else int(age)}s, ts {ts})")
             return 0
@@ -122,6 +136,7 @@ def main() -> int:
             if key and isinstance(ap.get("rssi"), (int, float)):
                 points[key] = int(ap["rssi"])
         if not points:
+            note_state(last_status="home-aps-absent", last_sample_ts=ts)
             print("shield-rssi: abstain — home APs absent from scan top-5")
             return 0
 
@@ -141,6 +156,9 @@ def main() -> int:
         if size > TRUNCATE_BYTES:
             adb(["shell", "truncate", "-s", "0", REMOTE], timeout=10)
             truncated = True
+        st["last_status"] = "ok"
+        st["last_sample_ts"] = ts
+        st["last_poll_utc"] = datetime.now(timezone.utc).isoformat()
         save_state(st)
 
         print(f"shield-rssi: {'appended' if appended else 'deduped'} "
