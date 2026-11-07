@@ -38,7 +38,9 @@ echo "[3/5] Compiling Java sources with javac (target 1.8 / SDK 30)..."
   -classpath "$PLATFORM_JAR" \
   -d "$OBJ_DIR" \
   "$GEN_DIR/com/jonathancruzate/shieldwifisense/R.java" \
-  "$PROJECT_DIR/app/src/main/java/com/jonathancruzate/shieldwifisense/MainActivity.java"
+  "$PROJECT_DIR/app/src/main/java/com/jonathancruzate/shieldwifisense/MainActivity.java" \
+  "$PROJECT_DIR/app/src/main/java/com/jonathancruzate/shieldwifisense/SenseService.java" \
+  "$PROJECT_DIR/app/src/main/java/com/jonathancruzate/shieldwifisense/BootReceiver.java"
 
 echo "[4/5] Dexing bytecode with d8..."
 CLASS_FILES=()

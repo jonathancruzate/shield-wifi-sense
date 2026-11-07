@@ -18,6 +18,10 @@ Also verified on the 2019 Shield Pro while building this: **no `android.hardware
 
 The reference install runs the Shield **wired**. Its Wi-Fi radio is unassociated (`WifiInfo` RSSI reads −127, reported honestly in every sample) — but the radio still *scans*, and scan RSSI for the home's two access points arrives strong (−36 / −38 dBm at 5 GHz in the reference apartment). Scan results are OS-throttled/cached, so the effective new-data cadence is ~30 s to a few minutes: perfect for occupancy *trends*, useless for motion *transients*. If you associate the device to Wi-Fi instead, the same app additionally yields a true 2 Hz connected-link RSSI stream.
 
+## v1.1 (2026-11-07)
+
+Sampling now runs in a **foreground service** (`SenseService`) instead of the Activity: it survives the UI being closed, is **started at boot** by a `BOOT_COMPLETED` receiver, logs the **full scan vector** (`scan_aps`, strongest-5 kept for compatibility), stamps each sample with `app_version`, and **rotates its own log** at ~3 MB. The Activity is a thin status viewer that tails the newest sample. Verified live on the reference Shield: service sampling with no Activity running, 27-AP scan vectors, boot receiver registered for BOOT_COMPLETED + QUICKBOOT_POWERON.
+
 ## Build & install
 
 No Android Studio needed — `build.sh` compiles the plain-Java app with a project-local toolchain (JDK 17 + Android SDK platform + build-tools under `.toolchain/`, downloaded on first run; nothing installed system-wide):

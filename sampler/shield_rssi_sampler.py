@@ -131,13 +131,16 @@ def main() -> int:
             return 0
 
         points = {}
-        for ap in sample.get("strongest_5_aps", []):
+        # v1.1 apps log the full scan vector in `scan_aps`; v1 logged
+        # only `strongest_5_aps`. Prefer the full vector.
+        scan_list = sample.get("scan_aps") or sample.get("strongest_5_aps", [])
+        for ap in scan_list:
             key = APS.get(str(ap.get("bssid", "")).lower())
             if key and isinstance(ap.get("rssi"), (int, float)):
                 points[key] = int(ap["rssi"])
         if not points:
             note_state(last_status="home-aps-absent", last_sample_ts=ts)
-            print("shield-rssi: abstain — home APs absent from scan top-5")
+            print("shield-rssi: abstain — home APs absent from scan results")
             return 0
 
         sig = json.dumps(points, sort_keys=True)
